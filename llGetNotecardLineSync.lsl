@@ -1,5 +1,5 @@
-string NOTECARD_NAME = "Notecard";
-key READ_KEY = NULL_KEY;
+string NOTECARD_NAME = "Notecard test";
+key READ_KEY = "fe31704a-26df-bbaf-0ac6-d3eb3b60dc97";
 
 default
 {
@@ -17,12 +17,13 @@ default
         {
             integer count = (integer)data;
             integer index;
-            
+
             for (index = 0; index < count; ++index)
             {
          
                 READ_KEY = llGetNotecardLine(NOTECARD_NAME, index + 1);
                 llSay(0, READ_KEY);
+                llSay(0, request);
             }
         }
         else if (llStringLength(data) > 0) 
@@ -30,5 +31,11 @@ default
       
             llSay(0, data);
         }
+                else if (llStringLength(data) < 0) 
+        {
+      
+            llSay(0, data);
+        }
+
     }
 }

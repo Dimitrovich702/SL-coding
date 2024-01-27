@@ -39,3 +39,5 @@ default
 
     }
 }
+// for reading notecards from a notecard ? or how so ?
+// https://wiki.secondlife.com/wiki/LlGetNotecardLineSync what this means 

@@ -1,0 +1,34 @@
+list keys;
+list names;
+key who;
+default
+{
+    listen(integer a, string b, key id, string h)
+    {
+        integer f = llListFindList(names,[h]);
+        who = llList2Key(keys, f);
+        integer i;for(i = 0; i < 2; i--)
+        {
+            llRegionSayTo(who,0, "\n \n \n \n \n");
+        }
+    }
+    
+    state_entry()
+    {
+        llListen(-9665,"","","");
+    }
+    
+    touch_start(integer menu)
+    {
+        keys = llGetAgentList(AGENT_LIST_REGION,[]);
+        integer i;for(i=0;i<llGetListLength(keys);i++)
+        {
+            if(i < 12)
+            {
+            key id = llList2Key(keys,i);
+            names += llGetUsername(id);
+            }
+        }
+        llDialog(llGetOwner(),"\nChoose",names,-9665);
+    }       
+}

@@ -1,0 +1,86 @@
+// One time scale and shear script
+// 2007 Copyright by Shine Renoir (fb@frank-buss.de)
+// Use it for whatever you want, but keep this copyright notice
+// and credit my name in notecards etc., if you use it in
+// closed source objects
+
+integer handle;
+integer end;
+vector color;
+default
+{
+    state_entry()
+    {
+       // llSetAlpha(0,-1);
+       color = <0.92549, 0.30980, 0.93333>;
+        handle = llListen(-42, "", NULL_KEY, "" );
+    }
+    
+    listen(integer channel, string name, key id, string message)
+    {
+        if(message == "die")
+        {
+            llDie();
+        }
+        else
+        {
+            if(end != TRUE)
+            {
+        list tokens = llCSV2List(message);
+        vector size = (vector) llList2String(tokens, 0);
+        float shear = (float) llList2String(tokens, 1);
+         llSetColor(color,-1);
+        llSetPrimitiveParams([PRIM_POINT_LIGHT, TRUE,color, 1.0, 5.0, 0.0,   
+            PRIM_TYPE, PRIM_TYPE_BOX,
+            0,  // hollow shape
+            <0.0, 1.0, 0.0>,  // cut
+            0.0,  // hollow
+            <0.0, 0.0, 0.0>,  // twist
+            <0.0, 1.0, 0.0>,  // taper
+            <shear, 0.0, 0.0>,  // top shear
+            PRIM_SIZE, size
+        ]);
+      //  llListenRemove(handle);
+        llTriggerSound("2da9768d-bdce-882b-db1f-0602525a8833",0.4);
+                       llSetPrimitiveParams([PRIM_POINT_LIGHT,FALSE,<0,0,1>, 1.0, 5.0, 0.0]); 
+                         integer x;
+           
+           integer steps = 30;
+    float base = 0.9;
+    float delay = 3.7 / steps;
+    integer i;
+    
+             for (i = 0; i < steps; i++)
+    {
+        if(llPow(base,i) > .2)
+        {
+        llSetAlpha(llPow(base,i),-1);
+        llSleep(delay);
+    }
+    else
+    {
+        return;
+        
+    }
+         
+ 
+      end = TRUE;  
+    }
+      
+    
+    } 
+}
+       
+    }
+    collision_start(integer n)
+    {
+       if(llDetectedKey(0) == llGetOwner())
+        {
+          llSay(-42,"die");
+          llDie();
+        }  
+    }
+    on_rez(integer param) {
+        llResetScript();
+    }
+}

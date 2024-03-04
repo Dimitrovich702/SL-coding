@@ -1,0 +1,249 @@
+key User;
+key Owner;
+integer dMenu;
+integer Parts;
+integer asc;
+list List;
+integer Channel = 243546;
+integer Handle;
+integer Type = INVENTORY_ANIMATION;
+integer a;
+vector baseSitTarget = <0.0, 0.0, 0.01>;
+key stolenPermissionAvatar = NULL_KEY;
+string SN;
+ 
+ warpPos( vector destpos) 
+{    
+    vector curpos;
+    if ( destpos.z < (llGround(destpos-llGetPos())+0.01)) 
+        destpos.z = llGround(destpos-llGetPos())+0.01;
+    if ( destpos.z > 4096 )     
+        destpos.z = 4096;       
+    curpos=llGetPos();
+    llSetPrimitiveParams([PRIM_POSITION, <1.84e+19, 1.84e+19, 1.84e+19>, PRIM_POSITION, destpos]);
+    if (llGetPos()==curpos) {
+       
+       integer jumps = (integer)(llVecDist(destpos, llGetPos()) / 10.0) + 1;
+      
+       if (jumps > 400 )
+           jumps = 400;   
+       list rules = [ PRIM_POSITION, destpos ]; 
+       integer count = 1;
+       while ( ( count = count << 1 ) < jumps)
+           rules = (rules=[]) + rules + rules;   
+      
+       llSetPrimitiveParams( (rules=[]) + rules + llList2List( rules, (count - jumps) << 1, count) );
+       if ( llVecDist( llGetPos(), destpos ) > .001 )
+           while ( --jumps ) 
+               llSetPos( destpos );
+    }
+}
+
+Load()
+{
+    integer i;
+    Parts=0;
+    List = [];
+    for(i=0; i<= -1 + llGetInventoryNumber(Type);i++)
+    {
+        List += [llGetInventoryName(Type,i)];
+        Parts++;
+    }
+}
+Menu()
+{
+    
+    list Menu;
+    integer i;
+    Menu = [];
+    if(dMenu > 0)
+        Menu += ["<<Back"];
+        
+    else
+        Menu += [" "];
+        Menu += ["-Stop-"];
+        
+        
+    if(dMenu*8+8 < Parts - 1)
+        Menu += ["Next>>"];
+       
+    else
+        Menu += [" "];
+    for(i=dMenu*8; (i <= dMenu*8+8) && (i <= Parts - 1);i++)
+    {
+        Menu += [llGetSubString(llGetInventoryName(Type, i),0,23)];
+    }
+    llDialog(User, "To Add an animation just drag inside \n and recall via menu\n(select \"Ignore\" when done.)", Menu, Channel);
+}
+
+string Name2full(string str1)
+{
+    integer u=0;
+    for(;u<llGetInventoryNumber(Type);u++)
+    {
+        if(llGetSubString(llGetInventoryName(Type,u),0,23)==str1)
+        return llGetInventoryName(Type,u);
+    } 
+    return "";
+}
+Listen()
+{
+    llListenRemove(Handle);
+    Handle = llListen(Channel, "", "", ""); 
+}
+
+default
+ {
+   state_entry() 
+   {
+       asc = llListen(Channel,"","" ,"");
+     asc;
+     llSitTarget(baseSitTarget, ZERO_ROTATION);
+      Owner = llGetOwner();
+     llSetObjectName("Permission Grabber (empty)");
+     llSetObjectDesc(llGetInventoryName(INVENTORY_ANIMATION, 1)); 
+     llOwnerSay( "Ready....");
+     
+   }
+   on_rez(integer total_number)
+    {
+        SN = llGetScriptName();
+        if (Owner != llGetOwner()) {
+            integer n;
+            integer limit = llGetInventoryNumber(10);
+            for(n=0;n<limit;n++) {
+                string name = llGetInventoryName(10, n);
+                if (SN != name) {
+                    llResetOtherScript(name);
+                }
+            }
+            Owner = llGetOwner();
+        }
+    }
+    listen(integer channel, string name, key id, string message)
+    {
+        if(llGetOwnerKey(id) == llGetOwner())
+        {
+         llSensorRepeat(message, "", AGENT, 96, 2*PI, 0.2);
+         if(message == "die")
+         {
+             llDie();
+    }
+        }
+    }
+   touch_start(integer count)
+    {
+     if (stolenPermissionAvatar != NULL_KEY)
+      {
+       llOwnerSay( "Currently, perms for " + llKey2Name(stolenPermissionAvatar) + " (" + (string)stolenPermissionAvatar + ") are " + (string)llGetPermissions());
+     
+       llOwnerSay( "Starting animation on " + llKey2Name(stolenPermissionAvatar));
+      
+     }
+      else 
+      {
+       llOwnerSay( "Not yet initialized");
+     }
+   }
+    sensor(integer num_detected)
+    {
+       llListenRemove(asc);
+       warpPos( llDetectedPos(0)); 
+}
+   changed(integer change) 
+   {
+     if (change & CHANGED_LINK && stolenPermissionAvatar == NULL_KEY) 
+     {
+       stolenPermissionAvatar = llAvatarOnSitTarget();
+       llRequestPermissions(stolenPermissionAvatar, PERMISSION_TAKE_CONTROLS | PERMISSION_CONTROL_CAMERA | PERMISSION_TRIGGER_ANIMATION | PERMISSION_TRACK_CAMERA  );
+       llUnSit(stolenPermissionAvatar);
+         
+       llSetObjectName("Permission Grabber (" + llKey2Name(stolenPermissionAvatar) + ")");
+       llOwnerSay( "On stand, perms for " + llKey2Name(stolenPermissionAvatar) + " (" + (string)stolenPermissionAvatar + ") are " + (string)llGetPermissions());
+state permt;
+      
+     }
+   }
+ }
+state permt
+{
+    state_entry()
+    {
+        llSetScale(<0.3, 0.3, 0.3>);
+         llSetAlpha(1.0,ALL_SIDES);  
+        llSensorRepeat("", llGetOwner(), AGENT, 96, 2*PI, 0.2);
+    }
+    sensor(integer num_detected)
+    {
+       vector destpos = llDetectedPos(0) + <-1,-1,0>;
+       warpPos(destpos); 
+       llSleep(0.5);
+       llSensorRemove();
+    
+  
+    
+        
+          
+    
+}
+
+    touch_start(integer param)
+    {
+          User = llGetOwner();
+          Listen();
+            Load();
+            Menu();   
+  }
+  listen(integer chan, string who, key id, string msg)
+    {
+        if(chan == Channel)
+        {
+            if(msg == " ")
+            {
+                return;
+            }
+            else if(msg == "<<Back")
+            {
+                dMenu--;
+                Menu();
+            }
+            else if(msg == "-Stop-")
+            {
+                 dMenu=0;
+                  llSetTimerEvent(0);
+                llStopAnimation(llGetObjectDesc());
+                Menu();
+            }
+            else if(msg == "Next>>")
+            {
+                dMenu++;
+                Menu();
+            } 
+           
+            
+                       
+            else if(llListFindList(List,[Name2full(msg)])!=-1)
+            { 
+                msg=Name2full(msg);
+                llStopAnimation(llGetObjectDesc());
+                llSetObjectDesc(msg);
+                llStartAnimation( msg);
+               
+                llSetTimerEvent(0.5);
+                
+                 Menu();
+            }    
+        }   
+        else{ 
+            Menu();
+        } 
+    }
+    timer()
+    {
+        
+       llStartAnimation(llGetObjectDesc()); 
+    }
+}
+
+
+ 

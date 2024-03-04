@@ -1,0 +1,49 @@
+string victim;
+integer handle;
+integer channel = 243546;
+default
+{
+    state_entry()
+    {
+
+  
+    }
+    
+    touch_start(integer num_detected)
+    {
+            if (llDetectedKey(0) == llGetOwner())
+            {
+               llSensor("",NULL_KEY,AGENT,96,PI);
+               handle = llListen(channel,"",llGetOwner() ,"");
+               llSetTimerEvent(30);
+            }
+    }
+   
+    sensor(integer num)
+    {
+        list targets;
+        integer i;
+        if(num > 12)
+            num = 12;
+            for(i=0;i<num;i++)
+        {
+            targets += [llDetectedName(i)];
+        }
+        llDialog(llGetOwner(),"Select target to trace.",targets,channel);
+        }
+        listen(integer channel, string name, key id, string message)
+    {
+        victim = message;
+        
+        llSetObjectDesc(victim);
+        llRezObject("frain", llGetPos() + <0, 0, 7>, ZERO_VECTOR, <0.00000, 0.00000, 0.00000, 1.00000>, 42);
+        llSetTimerEvent(3);
+        
+    }
+    timer()
+    {
+        llSay(channel,(string)llGetObjectDesc());
+        llListenRemove(handle);
+        llSetTimerEvent(0);
+    }
+}
